@@ -57,7 +57,7 @@ if __name__ == "__main__":
         first = list_of_urls.pop(0)
         row = fetch_and_parse(first, True)
 
-        csv.write(",".join(headers) + "\n")
+        csv.write(",".join(headers).encode('utf-8') + "\n")
         csv.write(row + "\n")
 
         i = 2
