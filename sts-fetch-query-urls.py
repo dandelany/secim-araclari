@@ -5,6 +5,8 @@ import requests
 import sys
 import bs4
 import urllib2
+import time
+import os
 
 VIEWSTATE = None
 
@@ -57,6 +59,7 @@ def get_boxes(city, state):
     url_pattern = "http://sts.chp.org.tr/SonucDetay.aspx?sid="
 
     r = requests.post("http://sts.chp.org.tr/", params)
+    time.sleep(0.5)
     html = bs4.BeautifulSoup(r.text)
     urls = []
 
@@ -150,29 +153,44 @@ if __name__ == "__main__":
      u'OSMAN\u0130YE',
      u'D\xdcZCE']
 
-    # Select city
-    try:
-        city = cities.index(sys.argv[1].decode("utf-8")) + 1
-    except IndexError, e:
-        print "Usage: %s <city_name (e.g. İSTANBUL)> [state_name (e.g. KADIKÖY)]" % sys.argv[0]
-        sys.exit(1)
+    # Select cities
+    my_cities = []
+    cities_arg = sys.argv[1].decode("utf-8")
+    city_strs = cities if cities_arg == "--all" else cities_arg.split(",")
 
-    # Get states of this city
-    state_dict = get_states(city)
+    if not os.path.exists("data"): 
+        os.makedirs("data")
+    if not os.path.exists("data/query_urls"): 
+        os.makedirs("data/query_urls")
 
-    if len(sys.argv) > 2:
-        # State is specified
-        state_name = sys.argv[2].decode("utf-8")
-        states = [state_dict[state_name]]
-        output = cities[city-1] + "_" + state_name + ".txt"
-    else:
-        # All of them
-        states = state_dict.values()
-        output = cities[city-1] + ".txt"
+    for city_str in city_strs:
+        try:
+            city = cities.index(city_str) + 1
+            my_cities.append(city)
+        except IndexError, e:
+            print "Usage: %s <city_name (e.g. İSTANBUL)> [state_name (e.g. KADIKÖY)]" % sys.argv[0]
+            sys.exit(1)
 
-    boxes = []
-    for state in states:
-        print state
-        boxes.extend(get_boxes(city, state))
+        print city_str
+        # Get states of this city
+        state_dict = get_states(city)
 
-    open(output, "w").write("\n".join(boxes))
+        if len(sys.argv) > 2:
+            # State is specified
+            state_name = sys.argv[2].decode("utf-8")
+            states = [state_dict[state_name]]
+            output = cities[city-1] + "_" + state_name + ".txt"
+        else:
+            # All of them
+            states = state_dict.values()
+            output = cities[city-1] + ".txt"
+
+        boxes = []
+        for state in states:
+            print state
+            boxes.extend(get_boxes(city, state))
+
+        open("data/query_urls/" + output, "w").write("\n".join(boxes))
+
+        if len(cities) > 2:
+            time.sleep(5)
