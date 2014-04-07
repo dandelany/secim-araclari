@@ -7,8 +7,8 @@ TScatterplot.prototype.init = function() {
     this.color = d3.scale.category20();
 
     this.margin = {t:30, r:20, b:60, l:40 };
-    this.w = 900 - this.margin.l - this.margin.r;
-    this.h = 600 - this.margin.t - this.margin.b;
+    this.w = 1200 - this.margin.l - this.margin.r;
+    this.h = 2800 - this.margin.t - this.margin.b;
 
     this.svg = d3.select(".scatter-container").append("svg")
         .attr("width", this.w + this.margin.l + this.margin.r)
@@ -17,15 +17,12 @@ TScatterplot.prototype.init = function() {
     this.x = d3.scale.linear().range([0, this.w]);
     this.y = d3.scale.linear().range([this.h - 60, 0]);
     this.x.domain([70, 110]);
-    this.y.domain([0, 105]);
+    this.y.domain([-100, 105]);
 
     // group that will contain all of the plots
     this.groups = this.svg.append("g").attr("transform", "translate(" + this.margin.l + "," + this.margin.t + ")");
 
-    // array of the regions, used for the legend
-    this.regions = ["Asia", "Europe", "Middle East", "N. America", "S. America", "Sub-Saharan Africa"];
-
-    this.renderAxes();
+    //this.renderAxes();
 
 };
 
@@ -37,24 +34,26 @@ TScatterplot.prototype.getData = function() {
 
         self.promises = [];
         self.citiesData = {};
+
+        var chartH = ((self.h - 60) / Math.ceil(self.cities.length / 3));
+        var chartW = (self.w / 3);
+
+        i = 0;
         _(self.cities).each(function(city) {
             //self.promises.push($.ajax('../data/city_results/' + city + '.json'))
             self.promises.push($.getJSON('../data/city_results/' + city + '.json', function(response) {
                 var cityData = response;
-                console.log(cityData[0].il);
-                self.renderCity.call(self, cityData, cityData[0].il);
+                var size = {
+                    h: chartH, w: chartW,
+                    x: ((i % 3) * chartW),
+                    y: (Math.floor(i / 3) * chartH)
+                };
+                i++;
+                self.renderCity.call(self, cityData, cityData[0].il, size);
                 self.citiesData[cityData[0].il] = cityData;
             }));
         });
         $.when.apply($, self.promises).done(function() {
-            //var xhrs = arguments;
-            //if(xhrs[1] == 'success') { xhrs = [xhrs]; }
-//            _(xhrs).each(function(xhr) {
-//                var cityData = xhr[0];
-//                console.log(cityData[0].il);
-//                self.renderCity.call(self, cityData, cityData[0].il);
-//                self.citiesData[cityData[0].il] = cityData;
-//            });
             self.renderDigits();
             self.renderLegend();
         });
@@ -62,48 +61,85 @@ TScatterplot.prototype.getData = function() {
 
 
 };
-TScatterplot.prototype.renderAxes = function() {
+TScatterplot.prototype.renderAxes = function(xScale, yScale, size) {
     // set axes, as well as details on their ticks
-    this.xAxis = d3.svg.axis()
-        .scale(this.x)
-        .ticks(20)
+    var xScale = xScale || this.x,
+        yScale = yScale || this.y,
+        size = size || {
+            w: this.w,
+            h: this.h,
+            x: 0,
+            y: 0
+        },
+        xAxis = d3.svg.axis()
+        .scale(xScale)
+        .ticks(5)
         .tickSubdivide(true)
         .tickSize(6, 3, 0)
         .orient("bottom");
 
-    this.yAxis = d3.svg.axis()
-        .scale(this.y)
-        .ticks(20)
+    var yAxis = d3.svg.axis()
+        .scale(xScale)
+        .ticks(5)
         .tickSubdivide(true)
         .tickSize(6, 3, 0)
         .orient("left");
 
     // draw axes and axis labels
-    this.svg.append("g")
-        .attr("class", "x axis")
-        .attr("transform", "translate(" + this.margin.l + "," + (this.h - 60 + this.margin.t) + ")")
-        .call(this.xAxis);
-
-    this.svg.append("g")
-        .attr("class", "y axis")
-        .attr("transform", "translate(" + this.margin.l + "," + this.margin.t + ")")
-        .call(this.yAxis);
+//    this.svg.append("g")
+//        .attr("class", "x axis")
+//        .attr("transform", "translate(" + size.x + "," + (size.y) + ")")
+//        .call(xAxis);
+//
+//    this.svg.append("g")
+//        .attr("class", "y axis")
+//        .attr("transform", "translate(" + size.x + "," + size.y + ")")
+//        .call(yAxis);
 
     this.svg.append("text")
         .attr("class", "x label")
-        .attr("text-anchor", "end")
-        .attr("x", this.w + 50)
-        .attr("y", this.h - this.margin.t - 5)
+        .attr("text-anchor", "begin")
+        .attr("x", size.x + 20)
+        .attr("y", size.h)
         .text("% voter turnout");
 
     this.svg.append("text")
         .attr("class", "y label")
         .attr("text-anchor", "end")
-        .attr("x", -20)
-        .attr("y", 45)
+        .attr("x", size.y - 40)
+        .attr("y", size.x + 20)
         .attr("dy", ".75em")
         .attr("transform", "rotate(-90)")
         .text("% vote for AKP");
+
+
+
+//    // draw axes and axis labels
+//    this.svg.append("g")
+//        .attr("class", "x axis")
+//        .attr("transform", "translate(" + this.margin.l + "," + (this.h - 60 + this.margin.t) + ")")
+//        .call(this.xAxis);
+//
+//    this.svg.append("g")
+//        .attr("class", "y axis")
+//        .attr("transform", "translate(" + this.margin.l + "," + this.margin.t + ")")
+//        .call(this.yAxis);
+//
+//    this.svg.append("text")
+//        .attr("class", "x label")
+//        .attr("text-anchor", "end")
+//        .attr("x", this.w + 50)
+//        .attr("y", this.h - this.margin.t - 5)
+//        .text("% voter turnout");
+//
+//    this.svg.append("text")
+//        .attr("class", "y label")
+//        .attr("text-anchor", "end")
+//        .attr("x", -20)
+//        .attr("y", 45)
+//        .attr("dy", ".75em")
+//        .attr("transform", "rotate(-90)")
+//        .text("% vote for AKP");
 };
 TScatterplot.prototype.renderLegend = function() {
     // the legend color guide
@@ -129,28 +165,39 @@ TScatterplot.prototype.renderLegend = function() {
         .attr('class', 'legend-label')
         .attr({
             x: function(d, i) { return (67 + i*80) % self.w; },
-            y: function(d, i) { return self.h + 10 + (Math.floor((40 + i*80) / self.w) * 18) ; } ,
+            y: function(d, i) { return self.h + 10 + (Math.floor((40 + i*80) / self.w) * 18); }
         })
         .text(function(d) { return d.charAt(0).toUpperCase() + d.slice(1).toLowerCase(); });
 };
 
-TScatterplot.prototype.renderCity = function(cityData, cityName) {
+TScatterplot.prototype.renderCity = function(cityData, cityName, size) {
     // style the circles, set their locations based on data
     var self = this;
+    var xScale = d3.scale.linear().range([size.x, size.x + size.w]);
+    var yScale = d3.scale.linear().range([size.y, size.y + size.h]);
+    xScale.domain([50, 120]);
+    yScale.domain([-100, 100]);
+
     var circles = this.groups.selectAll("circle.circles"+cityData[0].il)
         .data(cityData)
         .enter().append("circle")
         .attr("class", "circles-"+cityData[0].il)
         .attr({
             //cx: function(d) { return x(d.kullanilan_toplam_oy / d.kayitli_secmen); },
-            cx: function(d) { return self.x((d.oy_kullanan_kayitli_secmen / d.kayitli_secmen) * 100); },
+            cx: function(d) {
+                var x = xScale((d.oy_kullanan_kayitli_secmen / d.kayitli_secmen) * 100);
+                if(_(x).isNaN() || !_(x).isFinite()) { return 0; }
+                return x;
+            },
             //cx: function(d) { return self.x((d.gecersiz_oy / d.kayitli_secmen) * 100); },
             //cx: function(d) { return self.x((d.kullanilan_toplam_oy / d.kayitli_secmen) * 100); },
             //cx: function(d) { return self.x((d.mhp_oy / d.kayitli_secmen) * 100); },
-            cy: function(d) { return self.y((d.akp_oy / d.kayitli_secmen) * 100); },
-//            cy: function(d) {
-//                return self.y((((d.akp_oy / d.kayitli_secmen) - (d.chp_oy / d.kayitli_secmen)) * 100));
-//            },
+            //cy: function(d) { return self.y((d.akp_oy / d.kayitli_secmen) * 100); },
+            cy: function(d) {
+                var y = yScale((((d.akp_oy / d.kullanilan_toplam_oy) - (d.chp_oy / d.kullanilan_toplam_oy)) * 100));
+                if(_(y).isNaN() || !_(y).isFinite()) { return 0; }
+                return y;
+            },
             //r: function(d) { return Math.max(d.gecersiz_oy / 10, 1); },
             r: function(d) { return (d.kayitli_secmen / 170) },
             //r: 2,
@@ -158,6 +205,16 @@ TScatterplot.prototype.renderCity = function(cityData, cityName) {
             id: function(d) { return d.alan; }
         })
         .style("fill", function(d) { return self.color(d.il); });
+
+    this.svg.append("text")
+        .attr('class', 'city-label')
+        .attr({
+            x: size.x + 50,
+            y: size.y + 60
+        })
+        .text(function(d) { return cityName.charAt(0).toUpperCase() + cityName.slice(1).toLowerCase(); });
+
+    this.renderAxes(xScale, yScale, size);
 };
 
 TScatterplot.prototype.renderDigits = function() {
@@ -184,6 +241,7 @@ TScatterplot.prototype.renderDigits = function() {
                     maxFirstDigitCount = Math.max(maxFirstDigitCount, counts[(parseInt((d.akp_oy + '').slice(0)) % 10)]);
                     return counts;
                 }, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+
                 lastDigitCounts: _(cityData).reduce(function(counts, d) {
                     if(d.akp_oy == 0) { return counts; }
                     //if(d.akp_oy < 10) { return counts; }
@@ -191,17 +249,16 @@ TScatterplot.prototype.renderDigits = function() {
                     maxLastDigitCount = Math.max(maxLastDigitCount, counts[(parseInt((d.akp_oy + '').slice(-1)))]);
                     return counts;
                 }, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0]),
+
                 last2DigitCounts: _(cityData).reduce(function(counts, d) {
                     if(d.akp_oy == 0) { return counts; }
                     //if(d.akp_oy < 10) { return counts; }
                     counts[(parseInt((d.akp_oy + '').slice(-2)))] += 1;
                     maxLast2DigitCount = Math.max(maxLast2DigitCount, counts[(parseInt((d.akp_oy + '').slice(-2)))]);
                     return counts;
-                //}, [0, 0, 0, 0, 0, 0, 0, 0, 0, 0])
                 }, hundredZeros)
             };
 
-        //var interpolator = d3.interpolateHcl('#FEE3C5', '#963A28'),
         var interpolator = d3.interpolateLab('#ffffff', self.color(cityName)),
             firstDigitScale = d3.scale.linear().range([0, 1]).domain([0, maxFirstDigitCount]),
             lastDigitScale = d3.scale.linear().range([0, 1]).domain([0, maxLastDigitCount]),

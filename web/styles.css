@@ -15,6 +15,9 @@ pre { background-color: #eee; border-radius: 10px; border: 1px solid #ddd; width
 .legend-label {
     font-size: 12px;
 }
+.city-label {
+    font-size: 19px;
+}
 /*.scatter-container {*/
     /*width: 500;*/
     /*height: 500;*/
