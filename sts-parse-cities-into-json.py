@@ -36,7 +36,7 @@ headers = [
 def fetch_and_parse(url, get_headers=False):
     html = bs4.BeautifulSoup(urllib2.urlopen(url, "r").read())
     row = []
-    row = {}
+    row = {'chp_url': url}
 
     # city, state, ballot box
     il_ce_san = html.find("span", attrs={"id":"TabContainer_TabPanel1_lblOzetIlIlce1"}).getText().replace(" ", "").split("/")
